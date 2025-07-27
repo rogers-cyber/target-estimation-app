@@ -23,8 +23,8 @@ symbol = f"{base_symbol}/USDT"
 # ================================
 @st.cache_data(show_spinner=False)
 def fetch_data(symbol, timeframe, limit):
-    binance = ccxt.binance()
-    ohlcv = binance.fetch_ohlcv(symbol, timeframe, limit=limit)
+    exchange = ccxt.kucoin()
+    ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
     df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
     return df
