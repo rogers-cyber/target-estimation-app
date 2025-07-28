@@ -5,3 +5,5 @@ ta
 python-dotenv
 plotly
 streamlit-extras
+python-dateutil
+pillow
