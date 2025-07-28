@@ -5,6 +5,10 @@ from ta.trend import EMAIndicator, MACD, ADXIndicator
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import plotly.graph_objects as go
+import time
+
+# Inside your for-loop:
+time.sleep(0.2)  # Sleep 200ms between requests
 
 # ================================
 # App Title
