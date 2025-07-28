@@ -5,6 +5,7 @@ from ta.trend import EMAIndicator, MACD, ADXIndicator
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import plotly.graph_objects as go
+import timezone
 
 # ================================
 # Streamlit Setup
@@ -115,7 +116,7 @@ try:
     # last_candle_time = df['timestamp'].iloc[-1]
 
     # Example: UTC datetime (from exchange OHLCV)
-    last_candle_time_utc = df['timestamp'].iloc[-1].replace(tzinfo=datetime.utc)
+    last_candle_time_utc = df['timestamp'].iloc[-1].replace(tzinfo=timezone.utc)
     
     # Convert to Asia/Phnom_Penh time
     last_candle_time_local = last_candle_time_utc.astimezone(ZoneInfo("Asia/Phnom_Penh"))
