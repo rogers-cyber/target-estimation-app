@@ -28,7 +28,7 @@ st.markdown(f"""
 # Manual Refresh Button
 # ================================
 if st.button("🔄 Manual Refresh"):
-    st.experimental_rerun()
+    st.rerun()
 
 # ================================
 # Input Controls
