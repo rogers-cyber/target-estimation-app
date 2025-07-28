@@ -22,18 +22,37 @@ symbol = f"{base_symbol}/USDT"
 # Fetch & Process Data
 # ================================
 @st.cache_data(show_spinner=False)
-def fetch_data(symbol, timeframe, limit):
+def fetch_ohlcv_data(symbol, timeframe, limit):
     exchange = ccxt.kucoin()
     ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
     df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
     return df
 
-# Only proceed if input is valid
-try:
-    df = fetch_data(symbol, timeframe, limit)
+# Format price based on value
+def format_price(value):
+    if value >= 1:
+        return f"{value:.4f}"
+    elif value >= 0.01:
+        return f"{value:.6f}"
+    else:
+        return f"{value:.8f}"  # For small-value coins like SHIB
 
-    # Indicators
+# ================================
+# Main Logic
+# ================================
+try:
+    # Initialize exchange
+    exchange = ccxt.kucoin()
+
+    # Fetch OHLCV data for indicators
+    df = fetch_ohlcv_data(symbol, timeframe, limit)
+
+    # Fetch real-time price
+    ticker = exchange.fetch_ticker(symbol)
+    current_price = ticker['last']
+
+    # Calculate indicators
     df['ema50'] = EMAIndicator(df['close'], window=50).ema_indicator()
     df['ema200'] = EMAIndicator(df['close'], window=200).ema_indicator()
     macd = MACD(df['close'])
@@ -42,29 +61,19 @@ try:
     adx = ADXIndicator(df['high'], df['low'], df['close'], window=14)
     df['adx'] = adx.adx()
 
-    # Latest row
+    # Latest indicator values
     latest = df.iloc[-1]
-    current_price = latest['close']
     bullish_trend = latest['ema50'] > latest['ema200']
     macd_bullish = latest['macd'] > latest['macd_signal']
     strong_trend = latest['adx'] > 25
 
-    # Fib Targets
+    # Fibonacci targets
     swing_low = df['low'].min()
     swing_high = df['high'].max()
     fib_target_1 = swing_high + (swing_high - swing_low) * 0.618
     fib_target_2 = swing_high + (swing_high - swing_low) * 1.000
 
-    # Format prices
-    def format_price(value):
-        if value >= 1:
-            return f"{value:.4f}"
-        elif value >= 0.01:
-            return f"{value:.6f}"
-        else:
-            return f"{value:.8f}"
-
-    # Display results
+    # Display
     ts = datetime.now(ZoneInfo("Asia/Phnom_Penh")).strftime("%Y-%m-%d %I:%M %p ICT")
     st.subheader(f"📊 Analysis for {symbol} ({timeframe})")
     st.write(f"🕒 {ts} (Phnom Penh)")
@@ -80,7 +89,7 @@ try:
     else:
         st.warning("🚫 No strong buy signal. **Wait for clearer confirmation.**")
 
-    # Show recent price chart
+    # Line chart with indicators
     st.line_chart(df.set_index('timestamp')[['close', 'ema50', 'ema200']])
 
 except Exception as e:
