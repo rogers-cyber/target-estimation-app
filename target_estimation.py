@@ -7,9 +7,6 @@ from zoneinfo import ZoneInfo
 import plotly.graph_objects as go
 import time
 
-# Inside your for-loop:
-time.sleep(0.2)  # Sleep 200ms between requests
-
 # ================================
 # App Title
 # ================================
@@ -94,6 +91,9 @@ def plot_price_chart(df, symbol):
 try:
     # Initialize exchange
     exchange = ccxt.kucoin()
+
+    # Inside your for-loop:
+    time.sleep(0.2)  # Sleep 200ms between requests
 
     # Fetch OHLCV data
     df = fetch_ohlcv_data(symbol, timeframe, limit)
