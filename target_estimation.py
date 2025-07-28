@@ -5,19 +5,34 @@ from ta.trend import EMAIndicator, MACD, ADXIndicator
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import plotly.graph_objects as go
-from streamlit_extras.st_autorefresh import st_autorefresh
 
-# =====================================
-# Auto Refresh (every 60 seconds)
-# =====================================
-st_autorefresh(interval=60 * 1000, key="refresh")
-
-# =====================================
-# Title and Inputs
-# =====================================
+# ================================
+# Streamlit Setup
+# ================================
 st.set_page_config(page_title="Crypto TA Dashboard", layout="wide")
 st.title("📈 Crypto Technical Analysis Dashboard")
 
+# ================================
+# JavaScript Auto-Refresh (60 sec)
+# ================================
+refresh_interval_sec = 60
+st.markdown(f"""
+    <script>
+        setTimeout(function() {{
+            window.location.reload();
+        }}, {refresh_interval_sec * 1000});
+    </script>
+""", unsafe_allow_html=True)
+
+# ================================
+# Manual Refresh Button
+# ================================
+if st.button("🔄 Manual Refresh"):
+    st.experimental_rerun()
+
+# ================================
+# Input Controls
+# ================================
 col1, col2 = st.columns(2)
 with col1:
     base_symbol = st.text_input("Enter symbol (e.g., BTC, DOGE, SHIB):", "BTC").upper()
@@ -27,9 +42,9 @@ with col2:
 symbol = f"{base_symbol}/USDT"
 limit = 200
 
-# =====================================
-# Cached OHLCV Fetch Function
-# =====================================
+# ================================
+# Fetch OHLCV Data
+# ================================
 @st.cache_data(show_spinner=False)
 def fetch_ohlcv_data(symbol, timeframe, limit):
     exchange = ccxt.kucoin()
@@ -38,9 +53,9 @@ def fetch_ohlcv_data(symbol, timeframe, limit):
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
     return df
 
-# =====================================
-# Format Price for Readability
-# =====================================
+# ================================
+# Format Price
+# ================================
 def format_price(value):
     if value >= 1:
         return f"{value:.4f}"
@@ -49,9 +64,9 @@ def format_price(value):
     else:
         return f"{value:.8f}"
 
-# =====================================
-# Plot Chart with EMA Overlays
-# =====================================
+# ================================
+# Plot Candlestick Chart
+# ================================
 def plot_price_chart(df, symbol):
     fig = go.Figure()
 
@@ -67,11 +82,15 @@ def plot_price_chart(df, symbol):
         showlegend=False
     ))
 
-    fig.add_trace(go.Scatter(x=df['timestamp'], y=df['ema50'],
-                             line=dict(color='blue', width=1.5), name='EMA 50'))
+    fig.add_trace(go.Scatter(
+        x=df['timestamp'], y=df['ema50'],
+        line=dict(color='blue', width=1.5),
+        name='EMA 50'))
 
-    fig.add_trace(go.Scatter(x=df['timestamp'], y=df['ema200'],
-                             line=dict(color='orange', width=1.5), name='EMA 200'))
+    fig.add_trace(go.Scatter(
+        x=df['timestamp'], y=df['ema200'],
+        line=dict(color='orange', width=1.5),
+        name='EMA 200'))
 
     fig.update_layout(
         title=f'{symbol} Price Chart ({timeframe})',
@@ -85,9 +104,9 @@ def plot_price_chart(df, symbol):
 
     return fig
 
-# =====================================
-# Main Analysis
-# =====================================
+# ================================
+# Technical Analysis Logic
+# ================================
 try:
     exchange = ccxt.kucoin()
     df = fetch_ohlcv_data(symbol, timeframe, limit)
@@ -95,7 +114,7 @@ try:
     current_price = ticker['last']
     last_candle_time = df['timestamp'].iloc[-1]
 
-    # Technical Indicators
+    # Indicators
     df['ema50'] = EMAIndicator(df['close'], window=50).ema_indicator()
     df['ema200'] = EMAIndicator(df['close'], window=200).ema_indicator()
     macd = MACD(df['close'])
@@ -109,14 +128,13 @@ try:
     macd_bullish = latest['macd'] > latest['macd_signal']
     strong_trend = latest['adx'] > 25
 
+    # Fibonacci Targets
     swing_low = df['low'].min()
     swing_high = df['high'].max()
     fib_target_1 = swing_high + (swing_high - swing_low) * 0.618
     fib_target_2 = swing_high + (swing_high - swing_low) * 1.0
 
-    # ============================
     # Display Info
-    # ============================
     time_now = datetime.now(ZoneInfo("Asia/Phnom_Penh")).strftime("%Y-%m-%d %I:%M %p ICT")
     st.subheader(f"📊 Analysis for {symbol}")
     st.write(f"🕒 *Now:* `{time_now}`")
@@ -140,7 +158,7 @@ try:
     st.plotly_chart(plot_price_chart(df, symbol), use_container_width=True)
 
 except Exception as e:
-    st.error(f"Error fetching data or computing indicators: {e}")
+    st.error(f"❌ Error fetching data or indicators: {e}")
 
 # ================================
 # Donation Section
@@ -158,4 +176,4 @@ You can also scan the QR code below 👇
 try:
     st.image("eth_qr.png", width=180, caption="ETH / USDT QR")
 except:
-    st.warning("⚠️ QR image not found. Add `eth_qr.png` to display it.")
+    st.warning("⚠️ QR image not found. Add `eth_qr.png` to your folder.")
