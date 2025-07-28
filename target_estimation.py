@@ -2,10 +2,9 @@ import streamlit as st
 import ccxt
 import pandas as pd
 from ta.trend import EMAIndicator, MACD, ADXIndicator
-from datetime import datetime
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 import plotly.graph_objects as go
-import timezone
 
 # ================================
 # Streamlit Setup
