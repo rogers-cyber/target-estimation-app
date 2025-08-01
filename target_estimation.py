@@ -112,12 +112,8 @@ try:
     df = fetch_ohlcv_data(symbol, timeframe, limit)
     ticker = exchange.fetch_ticker(symbol)
     current_price = ticker['last']
-    # last_candle_time = df['timestamp'].iloc[-1]
 
-    # Example: UTC datetime (from exchange OHLCV)
     last_candle_time_utc = df['timestamp'].iloc[-1].replace(tzinfo=timezone.utc)
-
-    # Convert to Asia/Phnom_Penh time
     last_candle_time_local = last_candle_time_utc.astimezone(ZoneInfo("Asia/Phnom_Penh"))
 
     # Indicators
@@ -146,13 +142,25 @@ try:
     st.write(f"🕒 *Now:* `{time_now}`")
     st.write(f"🕯️ *Last candle:* `{last_candle_time_local.strftime('%Y-%m-%d %I:%M %p %Z')}`")
 
-    # st.write(f"🕯️ *Last candle:* `{last_candle_time}`")
-
+    # Metrics
     col1, col2, col3 = st.columns(3)
     col1.metric("Current Price", format_price(current_price))
     col2.metric("EMA50", format_price(latest['ema50']))
     col3.metric("EMA200", format_price(latest['ema200']))
 
+    # 📉 24h Change %
+    change_24h = ticker['percentage']
+    arrow = "🔺" if change_24h >= 0 else "🔻"
+    st.metric(label="24h Change", value=f"{arrow} {abs(change_24h):.2f}%", delta=f"{change_24h:.2f}%", delta_color="inverse")
+
+    # 📌 Support/Resistance (static for now)
+    support_level = 0.0166
+    resistance_level = 0.0280
+    col_support, col_resistance = st.columns(2)
+    col_support.metric("📌 Support Level", f"${support_level:.6f}")
+    col_resistance.metric("📌 Resistance Level", f"${resistance_level:.6f}")
+
+    # TA details
     st.write(f"**MACD:** `{format_price(latest['macd'])}` | **Signal:** `{format_price(latest['macd_signal'])}`")
     st.write(f"**ADX:** `{format_price(latest['adx'])}`")
 
