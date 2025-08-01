@@ -65,9 +65,18 @@ def format_price(value):
         return f"{value:.8f}"
 
 # ================================
+# Calculate Dynamic Support/Resistance
+# ================================
+def get_support_resistance(df, lookback=50):
+    recent = df[-lookback:]
+    support = round(recent['low'].min(), 4)
+    resistance = round(recent['high'].max(), 4)
+    return support, resistance
+
+# ================================
 # Plot Candlestick Chart
 # ================================
-def plot_price_chart(df, symbol):
+def plot_price_chart(df, symbol, support_level=None, resistance_level=None):
     fig = go.Figure()
 
     fig.add_trace(go.Candlestick(
@@ -91,6 +100,12 @@ def plot_price_chart(df, symbol):
         x=df['timestamp'], y=df['ema200'],
         line=dict(color='orange', width=1.5),
         name='EMA 200'))
+
+    # Support & Resistance Lines
+    if support_level:
+        fig.add_hline(y=support_level, line=dict(color="green", width=1, dash="dot"), annotation_text="Support", annotation_position="bottom left")
+    if resistance_level:
+        fig.add_hline(y=resistance_level, line=dict(color="red", width=1, dash="dot"), annotation_text="Resistance", annotation_position="top left")
 
     fig.update_layout(
         title=f'{symbol} Price Chart ({timeframe})',
@@ -136,6 +151,9 @@ try:
     fib_target_1 = swing_high + (swing_high - swing_low) * 0.618
     fib_target_2 = swing_high + (swing_high - swing_low) * 1.0
 
+    # Dynamic Support/Resistance
+    support_level, resistance_level = get_support_resistance(df, lookback=50)
+
     # Display Info
     time_now = datetime.now(ZoneInfo("Asia/Phnom_Penh")).strftime("%Y-%m-%d %I:%M %p ICT")
     st.subheader(f"📊 Analysis for {symbol}")
@@ -153,12 +171,10 @@ try:
     arrow = "🔺" if change_24h >= 0 else "🔻"
     st.metric(label="24h Change", value=f"{arrow} {abs(change_24h):.2f}%", delta=f"{change_24h:.2f}%", delta_color="inverse")
 
-    # 📌 Support/Resistance (static for now)
-    support_level = 0.0166
-    resistance_level = 0.0280
+    # 📌 Support/Resistance (dynamic)
     col_support, col_resistance = st.columns(2)
-    col_support.metric("📌 Support Level", f"${support_level:.6f}")
-    col_resistance.metric("📌 Resistance Level", f"${resistance_level:.6f}")
+    col_support.metric("📌 Support Level", format_price(support_level))
+    col_resistance.metric("📌 Resistance Level", format_price(resistance_level))
 
     # TA details
     st.write(f"**MACD:** `{format_price(latest['macd'])}` | **Signal:** `{format_price(latest['macd_signal'])}`")
@@ -171,7 +187,8 @@ try:
     else:
         st.warning("🚫 No strong buy signal yet. Wait for further confirmation.")
 
-    st.plotly_chart(plot_price_chart(df, symbol), use_container_width=True)
+    # Plot chart with support/resistance lines
+    st.plotly_chart(plot_price_chart(df, symbol, support_level, resistance_level), use_container_width=True)
 
 except Exception as e:
     st.error(f"❌ Error fetching data or indicators: {e}")
@@ -192,4 +209,4 @@ You can also scan the QR code below 👇
 try:
     st.image("eth_qr.png", width=180, caption="ETH / USDT QR")
 except:
-    st.warning("⚠️ QR image not found. Add `eth_qr.png` to your folder.")
+    st.warning("
