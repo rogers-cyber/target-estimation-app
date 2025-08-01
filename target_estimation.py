@@ -206,7 +206,8 @@ If this app helped you, consider donating:
 
 You can also scan the QR code below 👇
 """)
+
 try:
     st.image("eth_qr.png", width=180, caption="ETH / USDT QR")
 except:
-    st.warning("
+    st.warning("⚠️ QR image not found. Add `eth_qr.png` to your folder.")
